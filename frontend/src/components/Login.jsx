@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuthUser } from '@/redux/authSlice';
+import api from "./../api/api";
 
 const Login = () => {
     const [input, setInput] = useState({
@@ -26,7 +27,7 @@ const Login = () => {
         e.preventDefault();
         try {
             setLoading(true);
-            const res = await axios.post('https://instaclone-g9h5.onrender.com/api/v1/user/login', input, {
+            const res = await api.post('/user/login', input, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
