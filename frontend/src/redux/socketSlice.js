@@ -16,22 +16,22 @@
 // export default socketSlice.reducer;
 
 import { createSlice } from "@reduxjs/toolkit";
+import { io } from "socket.io-client";
+
+const initialState = {
+  socket: null,
+};
 
 const socketSlice = createSlice({
-    name: "socketio",
-    initialState: {
-        socket: null
+  name: "socketio",
+  initialState,
+  reducers: {
+    setSocket: (state, action) => {
+      state.socket = action.payload;
     },
-    reducers: {
-        setSocket: (state, action) => {
-            state.socket = action.payload;
-        },
-        clearSocket: (state) => {
-            console.warn("[Redux] Socket disconnected. Resetting...");
-            state.socket = null;
-        }
-    }
+  },
 });
 
-export const { setSocket, clearSocket } = socketSlice.actions;
+export const { setSocket } = socketSlice.actions;
+
 export default socketSlice.reducer;
