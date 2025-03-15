@@ -1,105 +1,106 @@
-// import { useEffect, useRef } from 'react'
-// import ChatPage from './components/ChatPage'
-// import EditProfile from './components/EditProfile'
-// import Home from './components/Home'
-// import Login from './components/Login'
-// import MainLayout from './components/MainLayout'
-// import Profile from './components/Profile'
-// import Signup from './components/Signup'
-// import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-// import { io } from "socket.io-client";
-// import { useDispatch, useSelector } from 'react-redux'
-// import { setSocket } from './redux/socketSlice'
-// import { setOnlineUsers } from './redux/chatSlice'
-// import { setLikeNotification } from './redux/rtnSlice'
-// import ProtectedRoutes from './components/ProtectedRoutes'
 
+// import { useEffect } from "react";
+// import { createBrowserRouter, RouterProvider } from "react-router-dom";
+// import { useDispatch, useSelector } from "react-redux";
+// import { setOnlineUsers, addMessage, resetUnreadCount  } from "./redux/chatSlice";
+// import { setLikeNotification } from "./redux/rtnSlice";
+
+// import ProtectedRoutes from "./components/ProtectedRoutes";
+// import ChatPage from "./components/ChatPage";
+// import EditProfile from "./components/EditProfile";
+// import Home from "./components/Home";
+// import Login from "./components/Login";
+// import MainLayout from "./components/MainLayout";
+// import Profile from "./components/Profile";
+// import Signup from "./components/Signup";
+// import { useSocket } from "./redux/SocketContext"; // ✅ Import socket context
 
 // const browserRouter = createBrowserRouter([
 //   {
 //     path: "/",
-//     element: <ProtectedRoutes><MainLayout /></ProtectedRoutes>,
+//     element: (
+//       <ProtectedRoutes>
+//         <MainLayout />
+//       </ProtectedRoutes>
+//     ),
 //     children: [
-//       {
-//         path: '/',
-//         element: <ProtectedRoutes><Home /></ProtectedRoutes>
-//       },
-//       {
-//         path: '/profile/:id',
-//         element: <ProtectedRoutes> <Profile /></ProtectedRoutes>
-//       },
-//       {
-//         path: '/account/edit',
-//         element: <ProtectedRoutes><EditProfile /></ProtectedRoutes>
-//       },
-//       {
-//         path: '/chat',
-//         element: <ProtectedRoutes><ChatPage /></ProtectedRoutes>
-//       },
-//     ]
+//       { path: "/", element: <ProtectedRoutes><Home /></ProtectedRoutes> },
+//       { path: "/profile/:id", element: <ProtectedRoutes><Profile /></ProtectedRoutes> },
+//       { path: "/account/edit", element: <ProtectedRoutes><EditProfile /></ProtectedRoutes> },
+//       { path: "/chat", element: <ProtectedRoutes><ChatPage /></ProtectedRoutes> },
+//     ],
 //   },
-//   {
-//     path: '/login',
-//     element: <Login />
-//   },
-//   {
-//     path: '/signup',
-//     element: <Signup />
-//   },
-// ])
+//   { path: "/login", element: <Login /> },
+//   { path: "/signup", element: <Signup /> },
+// ]);
 
 // function App() {
-//   const { user } = useSelector(store => store.auth);
-//   const { socket } = useSelector(store => store.socketio);
+//   const { user } = useSelector((store) => store.auth);
 //   const dispatch = useDispatch();
-//   const socketRef = useRef(null);
+//   const socket = useSocket(); // ✅ Get socket instance from context
 
 //   useEffect(() => {
-//     if (user) {
-//       const socketio = io('http://localhost:3000', {
-//         query: {
-//           userId: user?._id
-//         },
-//         transports: ['websocket']
-//       });
-//       dispatch(setSocket(socketio));
+//     if (!socket || !user?._id) return;
 
-//       // listen all the events
-//       socketio.on('getOnlineUsers', (onlineUsers) => {
-//         dispatch(setOnlineUsers(onlineUsers));
-//       });
+//     console.log("✅ [WebSocket] Connected:", socket.id);
 
-//       socketio.on('notification', (notification) => {
-//         dispatch(setLikeNotification(notification));
-//       });
+//     // ✅ Listen for real-time online users
+//     const handleOnlineUsers = (onlineUsers) => {
+//       console.log("📢 [RTM] Online Users Updated:", onlineUsers);
+//       dispatch(setOnlineUsers(onlineUsers));
+//     };
 
-//       return () => {
-//         socketio.close();
-//         dispatch(setSocket(null));
+//     // ✅ Listen for real-time notifications
+//     const handleNotification = (notification) => {
+//       console.log("🔔 [RTM] New Notification:", notification);
+//       dispatch(setLikeNotification(notification));
+//     };
+
+//     // ✅ Listen for new messages in real-time
+//     // const handleNewMessage = (message) => {
+//     //   console.log("📩 [Chat] New Message Received:", message);
+//     //   dispatch(addMessage(message)); // ✅ Add message to store
+
+//     //   if (message.receiverId === user._id) {
+//     //     dispatch(setUnreadMessages({ senderId: message.senderId })); // ✅ Mark as unread if the message is for this user
+//     //   }
+//     // };
+
+//     const handleNewMessage = (message) => {
+//       console.log("📩 [Chat] New Message Received:", message);
+//       dispatch(addMessage(message)); // ✅ Add message to store
+
+//       if (message.receiverId === user._id) {
+//         dispatch(resetUnreadCount()); // ✅ Correct function to reset unread count
 //       }
-//     } else if (socket) {
-//       socket.close();
-//       dispatch(setSocket(null));
-//     }
-//   }, [user, dispatch]);
+//     };
 
- 
+//     socket.on("getOnlineUsers", handleOnlineUsers);
+//     socket.on("notification", handleNotification);
+//     socket.on("newMessage", handleNewMessage); // ✅ Listen for real-time messages
 
-//   return (
-//     <>
-//       <RouterProvider router={browserRouter} />
-//     </>
-//   )
+//     return () => {
+//       console.warn("⚠️ [WebSocket] Cleaning up event listeners...");
+//       socket.off("getOnlineUsers", handleOnlineUsers);
+//       socket.off("notification", handleNotification);
+//       socket.off("newMessage", handleNewMessage);
+//     };
+//   }, [socket, user?._id, dispatch]);
+
+//   return <RouterProvider router={browserRouter} />;
+
+  
 // }
 
-// export default App
+// export default App;
+
+
 import { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { io } from "socket.io-client";
 import { useDispatch, useSelector } from "react-redux";
-import { setSocket } from "./redux/socketSlice";
-import { setOnlineUsers } from "./redux/chatSlice";
+import { setOnlineUsers, addMessage, resetUnreadCount  } from "./redux/chatSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
+
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import ChatPage from "./components/ChatPage";
 import EditProfile from "./components/EditProfile";
@@ -108,6 +109,7 @@ import Login from "./components/Login";
 import MainLayout from "./components/MainLayout";
 import Profile from "./components/Profile";
 import Signup from "./components/Signup";
+import { useSocket } from "./redux/SocketContext"; // ✅ Import socket context
 
 const browserRouter = createBrowserRouter([
   {
@@ -118,38 +120,10 @@ const browserRouter = createBrowserRouter([
       </ProtectedRoutes>
     ),
     children: [
-      {
-        path: "/",
-        element: (
-          <ProtectedRoutes>
-            <Home />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/profile/:id",
-        element: (
-          <ProtectedRoutes>
-            <Profile />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/account/edit",
-        element: (
-          <ProtectedRoutes>
-            <EditProfile />
-          </ProtectedRoutes>
-        ),
-      },
-      {
-        path: "/chat",
-        element: (
-          <ProtectedRoutes>
-            <ChatPage />
-          </ProtectedRoutes>
-        ),
-      },
+      { path: "/", element: <ProtectedRoutes><Home /></ProtectedRoutes> },
+      { path: "/profile/:id", element: <ProtectedRoutes><Profile /></ProtectedRoutes> },
+      { path: "/account/edit", element: <ProtectedRoutes><EditProfile /></ProtectedRoutes> },
+      { path: "/chat", element: <ProtectedRoutes><ChatPage /></ProtectedRoutes> },
     ],
   },
   { path: "/login", element: <Login /> },
@@ -159,55 +133,53 @@ const browserRouter = createBrowserRouter([
 function App() {
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
+  const socket = useSocket(); // ✅ Get socket instance from context
 
   useEffect(() => {
-    if (!user?._id) {
-      console.warn("[App] No user logged in. Skipping WebSocket initialization.");
-      return;
-    }
+    if (!socket || !user?._id) return;
 
-    // Initialize the WebSocket connection
-    const socket = io("http://localhost:3000", {
-      transports: ["websocket"],
-      withCredentials: true,
-      query: {
-        userId: user._id, // Pass the user ID to the server
-      },
-    });
+    console.log("✅ [WebSocket] Connected:", socket.id);
 
-    console.log("✅ [WebSocket] Connecting...");
-
-    // Attach event listeners
-    socket.on("connect", () => {
-      console.log("✅ [WebSocket] Connected:", socket.id);
-    });
-
-    socket.on("disconnect", () => {
-      console.warn("⚠️ [WebSocket] Disconnected!");
-    });
-
-    socket.on("getOnlineUsers", (onlineUsers) => {
+    // ✅ Listen for real-time online users
+    const handleOnlineUsers = (onlineUsers) => {
       console.log("📢 [RTM] Online Users Updated:", onlineUsers);
       dispatch(setOnlineUsers(onlineUsers));
-    });
+    };
 
-    socket.on("notification", (notification) => {
+    // ✅ Listen for real-time notifications
+    const handleNotification = (notification) => {
       console.log("🔔 [RTM] New Notification:", notification);
       dispatch(setLikeNotification(notification));
-    });
-
-    // Store the socket instance in the Redux store
-    dispatch(setSocket(socket));
-
-    // Cleanup function
-    return () => {
-      console.warn("[App] Cleaning up WebSocket connection...");
-      socket.disconnect();
-      dispatch(setSocket(null));
     };
-  }, [user?._id, dispatch]); // Only re-run when the user ID changes
+
+
+
+    const handleNewMessage = (message) => {
+      console.log("📩 [Chat] New Message Received:", message);
+      dispatch(addMessage(message));
+  
+      // ✅ Increase unread count only if the user is not on the chat page
+      if (message.receiverId === user._id && window.location.pathname !== "/chat") {
+          dispatch(setUnreadCount(prev => prev + 1)); 
+      }
+  };
+  
+
+    socket.on("getOnlineUsers", handleOnlineUsers);
+    socket.on("notification", handleNotification);
+    socket.on("newMessage", handleNewMessage); // ✅ Listen for real-time messages
+
+    return () => {
+      console.warn("⚠️ [WebSocket] Cleaning up event listeners...");
+      socket.off("getOnlineUsers", handleOnlineUsers);
+      socket.off("notification", handleNotification);
+      socket.off("newMessage", handleNewMessage);
+    };
+  }, [socket, user?._id, dispatch]);
 
   return <RouterProvider router={browserRouter} />;
+
+  
 }
 
 export default App;

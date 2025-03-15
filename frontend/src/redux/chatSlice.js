@@ -1,8 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  messages: [], // Messages array
-  onlineUsers: [], // Array of online user IDs
+  messages: [],
+  onlineUsers: [],
+  unreadCount: 0, // Track unread messages
 };
 
 const chatSlice = createSlice({
@@ -10,17 +11,20 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     setMessages: (state, action) => {
-      state.messages = action.payload; // Update messages
+      state.messages = action.payload;
     },
     addMessage: (state, action) => {
-      state.messages.push(action.payload); // Append a single message
+      state.messages.push(action.payload);
+      state.unreadCount += 1; // Increase unread count
     },
     setOnlineUsers: (state, action) => {
-      state.onlineUsers = action.payload; // Update online users
+      state.onlineUsers = action.payload; // ✅ Fix: Ensure state update works correctly
+    },
+    resetUnreadCount: (state) => {
+      state.unreadCount = 0; // Reset unread count when user opens chat
     },
   },
 });
 
-export const { setMessages, addMessage, setOnlineUsers } = chatSlice.actions;
-
+export const { setMessages, addMessage, resetUnreadCount,setOnlineUsers  } = chatSlice.actions;
 export default chatSlice.reducer;

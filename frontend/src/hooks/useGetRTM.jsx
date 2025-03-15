@@ -26,24 +26,15 @@ const useGetRTM = () => {
   const { socket } = useSelector((store) => store.socketio);
 
   useEffect(() => {
-    if (!socket || typeof socket.on !== "function") {
-      console.warn("[RTM] No valid socket connection found!");
-      return;
-    }
-
-    console.log("[RTM] Listening for new messages...");
+    if (!socket) return;
 
     const handleNewMessage = (newMessage) => {
-      console.log("[RTM] New message received:", newMessage);
-
-      // Append the new message to the existing messages array
       dispatch(addMessage(newMessage));
     };
 
     socket.on("newMessage", handleNewMessage);
 
     return () => {
-      console.log("[RTM] Unsubscribing from newMessage event.");
       socket.off("newMessage", handleNewMessage);
     };
   }, [socket, dispatch]);
