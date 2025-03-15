@@ -84,7 +84,11 @@ const useGetAllMessage = () => {
 
         if (res.data.success && Array.isArray(res.data.messages)) {
           console.log("[useGetAllMessage] Messages fetched successfully:", res.data.messages);
-          dispatch(setMessages(res.data.messages)); // Ensure messages is an array
+
+          // ✅ Remove duplicates before setting Redux state
+          const uniqueMessages = Array.from(new Map(res.data.messages.map(msg => [msg._id, msg])).values());
+
+          dispatch(setMessages(uniqueMessages));
         } else {
           console.warn("[useGetAllMessage] Invalid API response:", res.data);
           dispatch(setMessages([])); // Fallback to an empty array

@@ -16,6 +16,7 @@ export const SocketProvider = ({ children }) => {
     const newSocket = io("http://localhost:3000", {
       transports: ["websocket"],
       withCredentials: true,
+      autoConnect: true, // ✅ Ensure auto connection
       query: { userId: user._id },
     });
 

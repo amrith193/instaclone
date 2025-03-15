@@ -95,10 +95,10 @@
 // export default App;
 
 
-import { useEffect } from "react";
+import { useEffect, useState,useRef  } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { setOnlineUsers, addMessage, resetUnreadCount  } from "./redux/chatSlice";
+import { setOnlineUsers, addMessage, resetUnreadCount ,incrementUnreadCount } from "./redux/chatSlice";
 import { setLikeNotification } from "./redux/rtnSlice";
 
 import ProtectedRoutes from "./components/ProtectedRoutes";
@@ -131,9 +131,11 @@ const browserRouter = createBrowserRouter([
 ]);
 
 function App() {
+  const [localMessages, setLocalMessages] = useState([]);
   const { user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
   const socket = useSocket(); // ✅ Get socket instance from context
+  const messagesRef = useRef(new Set());
 
   useEffect(() => {
     if (!socket || !user?._id) return;
@@ -153,27 +155,39 @@ function App() {
     };
 
 
-
-    const handleNewMessage = (message) => {
-      console.log("📩 [Chat] New Message Received:", message);
-      dispatch(addMessage(message));
   
-      // ✅ Increase unread count only if the user is not on the chat page
-      if (message.receiverId === user._id && window.location.pathname !== "/chat") {
-          dispatch(setUnreadCount(prev => prev + 1)); 
+    
+    const handleNewMessage = (newMessage) => {
+      if (!messagesRef.current.has(newMessage._id)) { // ✅ Prevent duplicates
+        messagesRef.current.add(newMessage._id);
+        setLocalMessages((prev) => [...prev, newMessage]);
+        dispatch(addMessage(newMessage)); // Update Redux store
       }
-  };
+    };
+    
+    
+
+    
   
+
+
+  socket.on("newMessage", (message) => {
+    dispatch(incrementUnreadCount()); // ✅ Fixes error
+  });
+
+  
+ 
 
     socket.on("getOnlineUsers", handleOnlineUsers);
     socket.on("notification", handleNotification);
-    socket.on("newMessage", handleNewMessage); // ✅ Listen for real-time messages
+
 
     return () => {
       console.warn("⚠️ [WebSocket] Cleaning up event listeners...");
       socket.off("getOnlineUsers", handleOnlineUsers);
       socket.off("notification", handleNotification);
       socket.off("newMessage", handleNewMessage);
+      socket.off("resetUnreadCount",resetUnreadCount);
     };
   }, [socket, user?._id, dispatch]);
 

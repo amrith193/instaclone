@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
-import { useSelector,useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import useGetAllMessage from "@/hooks/useGetAllMessage";
 import useGetRTM from "@/hooks/useGetRTM";
-import { resetUnreadCount } from "@/redux/chatSlice";
+import { resetUnreadCount, addMessage } from "@/redux/chatSlice";
+import { useSocket } from "@/redux/SocketContext";
 
 const Messages = ({ selectedUser }) => {
   useGetRTM(); // Listen for real-time messages
@@ -13,14 +14,62 @@ const Messages = ({ selectedUser }) => {
 
   const { messages } = useSelector((store) => store.chat);
   const { user } = useSelector((store) => store.auth);
+  const dispatch = useDispatch();
+  const socket = useSocket();
 
-  // Ensure messages is always an array
-  const safeMessages = Array.isArray(messages) ? messages : [];
-  const dispatch = useDispatch(); // Declare dispatch
+  const [localMessages, setLocalMessages] = useState([]);
+  const messagesRef = useRef(new Set()); // Track message IDs to prevent duplicates
+  const socketListenerRef = useRef(false); // Ensure only one listener
 
+  // ✅ Filter messages for the selected user only
   useEffect(() => {
-    dispatch(resetUnreadCount()); // Reset unread messages when chat is opened
-  }, [dispatch]);
+    if (!selectedUser || !user) return;
+
+    const filteredMessages = messages.filter(
+      (msg) =>
+        (msg.senderId === user._id && msg.receiverId === selectedUser._id) ||
+        (msg.senderId === selectedUser._id && msg.receiverId === user._id)
+    );
+
+    setLocalMessages(filteredMessages);
+    messagesRef.current = new Set(filteredMessages.map((msg) => msg._id)); // Track unique messages
+  }, [messages, selectedUser, user]);
+
+  // ✅ Ensure only one socket listener is attached
+  useEffect(() => {
+    if (!socket || !selectedUser || !user) return;
+    if (socketListenerRef.current) return; // Prevent multiple listeners
+
+    const handleNewMessage = (newMessage) => {
+      if (
+        (newMessage.senderId === user._id && newMessage.receiverId === selectedUser._id) ||
+        (newMessage.senderId === selectedUser._id && newMessage.receiverId === user._id)
+      ) {
+        if (!messagesRef.current.has(newMessage._id)) {
+          messagesRef.current.add(newMessage._id);
+          setLocalMessages((prev) => [...prev, newMessage]);
+          dispatch(addMessage(newMessage)); // Update Redux store
+        }
+      }
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socketListenerRef.current = true; // Mark that listener is attached
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socketListenerRef.current = false; // Reset when unmounting
+    };
+  }, [socket, selectedUser, user, dispatch]);
+
+  // ✅ Mark messages as read when opening chat
+  useEffect(() => {
+    dispatch(resetUnreadCount());
+
+    if (socket && selectedUser?._id) {
+      socket.emit("markMessagesAsRead", { senderId: selectedUser._id });
+    }
+  }, [dispatch, socket, selectedUser]);
 
   return (
     <div className="overflow-y-auto flex-1 p-4">
@@ -39,9 +88,9 @@ const Messages = ({ selectedUser }) => {
         </div>
       </div>
       <div className="flex flex-col gap-3">
-        {safeMessages.map((msg) => (
+        {localMessages.map((msg, index) => (
           <div
-            key={msg._id}
+            key={msg._id || `temp-${index}`} // Ensure unique key
             className={`flex ${
               msg.senderId === user?._id ? "justify-end" : "justify-start"
             }`}

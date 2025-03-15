@@ -15,7 +15,9 @@ const chatSlice = createSlice({
     },
     addMessage: (state, action) => {
       state.messages.push(action.payload);
-      state.unreadCount += 1; // Increase unread count
+      if (action.payload.receiverId === state.userId) {
+        state.unreadCount += 1;
+    }
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload; // ✅ Fix: Ensure state update works correctly
@@ -23,8 +25,11 @@ const chatSlice = createSlice({
     resetUnreadCount: (state) => {
       state.unreadCount = 0; // Reset unread count when user opens chat
     },
+    incrementUnreadCount: (state) => {
+      state.unreadCount += 1; // ✅ Increase unread count for new messages
+    },
   },
 });
 
-export const { setMessages, addMessage, resetUnreadCount,setOnlineUsers  } = chatSlice.actions;
+export const { setMessages, addMessage, resetUnreadCount,setOnlineUsers,incrementUnreadCount  } = chatSlice.actions;
 export default chatSlice.reducer;
