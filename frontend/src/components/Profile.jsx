@@ -65,9 +65,9 @@ const Profile = () => {
               <div className='flex flex-col gap-1'>
                 <span className='font-semibold'>{userProfile?.bio || 'bio here...'}</span>
                 <Badge className='w-fit' variant='secondary'><AtSign /> <span className='pl-1'>{userProfile?.username}</span> </Badge>
-                <span>🤯Learn code with patel mernstack style</span>
-                <span>🤯Turing code into fun</span>
-                <span>🤯DM for collaboration</span>
+                <span></span>
+                <span></span>
+                <span>🤯</span>
               </div>
             </div>
           </section>
@@ -80,8 +80,8 @@ const Profile = () => {
             <span className={`py-3 cursor-pointer ${activeTab === 'saved' ? 'font-bold' : ''}`} onClick={() => handleTabChange('saved')}>
               SAVED
             </span>
-            <span className='py-3 cursor-pointer'>REELS</span>
-            <span className='py-3 cursor-pointer'>TAGS</span>
+            {/* <span className='py-3 cursor-pointer'>REELS</span>
+            <span className='py-3 cursor-pointer'>TAGS</span> */}
           </div>
           <div className='grid grid-cols-3 gap-1'>
             {
